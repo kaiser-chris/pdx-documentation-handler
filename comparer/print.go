@@ -210,7 +210,7 @@ func printTableLine(elements ...string) string {
 	var builder = strings.Builder{}
 	builder.WriteString("| ")
 	for _, element := range elements {
-		builder.WriteString(element + " | ")
+		builder.WriteString(clean(element) + " | ")
 	}
 	return strings.TrimSpace(builder.String())
 }
@@ -224,6 +224,16 @@ func printTableHeader(elements ...string) string {
 		builder.WriteString("--|")
 	}
 	return builder.String()
+}
+
+func clean(text string) string {
+	result := text
+	result = strings.ReplaceAll(result, "|", "\\|")
+	result = strings.ReplaceAll(result, "[", "\\[")
+	result = strings.ReplaceAll(result, "]", "\\]")
+	result = strings.ReplaceAll(result, "<", "\\<")
+	result = strings.ReplaceAll(result, ">", "\\>")
+	return result
 }
 
 func printFirstLine(block string) string {
