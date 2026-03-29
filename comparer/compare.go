@@ -7,60 +7,36 @@ import (
 )
 
 type CompareResult struct {
-	EffectResult      *EffectResult      `json:"effect-result"`
-	TriggerResult     *TriggerResult     `json:"trigger-result"`
-	EventTargetResult *EventTargetResult `json:"event-target-result"`
-	IteratorResult    *IteratorResult    `json:"iterator-result"`
-	ScopeResult       *ScopeResult       `json:"scope-result"`
+	EffectResult      *ElementResult[*parser.Effect]      `json:"effect-result"`
+	TriggerResult     *ElementResult[*parser.Trigger]     `json:"trigger-result"`
+	EventTargetResult *ElementResult[*parser.EventTarget] `json:"event-target-result"`
+	IteratorResult    *ElementResult[*parser.Iterator]    `json:"iterator-result"`
+	ScopeResult       *ElementResult[*parser.Scope]       `json:"scope-result"`
+	OnActionResult    *ElementResult[*parser.OnAction]    `json:"on-action-result"`
 }
 
-type EffectResult struct {
-	Added    []*parser.Effect `json:"added"`
-	Changed  []*parser.Effect `json:"changed"`
-	Removed  []*parser.Effect `json:"removed"`
-	Existing []*parser.Effect `json:"existing"`
+type ElementResult[T parser.ScriptElement] struct {
+	Added    []T `json:"added"`
+	Changed  []T `json:"changed"`
+	Removed  []T `json:"removed"`
+	Existing []T `json:"existing"`
 }
 
-type TriggerResult struct {
-	Added    []*parser.Trigger `json:"added"`
-	Changed  []*parser.Trigger `json:"changed"`
-	Removed  []*parser.Trigger `json:"removed"`
-	Existing []*parser.Trigger `json:"existing"`
-}
-
-type EventTargetResult struct {
-	Added    []*parser.EventTarget `json:"added"`
-	Changed  []*parser.EventTarget `json:"changed"`
-	Removed  []*parser.EventTarget `json:"removed"`
-	Existing []*parser.EventTarget `json:"existing"`
-}
-
-type IteratorResult struct {
-	Added    []*parser.Iterator `json:"added"`
-	Removed  []*parser.Iterator `json:"removed"`
-	Existing []*parser.Iterator `json:"existing"`
-}
-
-type ScopeResult struct {
-	Added    []*parser.Scope `json:"added"`
-	Removed  []*parser.Scope `json:"removed"`
-	Existing []*parser.Scope `json:"existing"`
-}
-
-func Compare(old *parser.Documentation, new *parser.Documentation) *CompareResult {
+func Compare(old *parser.ScriptDocumentation, new *parser.ScriptDocumentation) *CompareResult {
 	result := &CompareResult{}
 
-	result.EffectResult = compareEffects(old.EffectDocumentation.Effects, new.EffectDocumentation.Effects)
-	result.TriggerResult = compareTriggers(old.TriggerDocumentation.Triggers, new.TriggerDocumentation.Triggers)
-	result.EventTargetResult = compareEventTargets(old.EventTargetDocumentation.EventTargets, new.EventTargetDocumentation.EventTargets)
-	result.IteratorResult = compareIterators(old.IteratorDocumentation.Iterators, new.IteratorDocumentation.Iterators)
-	result.ScopeResult = compareScopes(old.ScopeDocumentation.Scopes, new.ScopeDocumentation.Scopes)
+	result.EffectResult = compareEffects(old.EffectDocumentation.Elements, new.EffectDocumentation.Elements)
+	result.TriggerResult = compareTriggers(old.TriggerDocumentation.Elements, new.TriggerDocumentation.Elements)
+	result.EventTargetResult = compareBasic(old.EventTargetDocumentation.Elements, new.EventTargetDocumentation.Elements)
+	result.IteratorResult = compareBasic(old.IteratorDocumentation.Elements, new.IteratorDocumentation.Elements)
+	result.ScopeResult = compareBasic(old.ScopeDocumentation.Elements, new.ScopeDocumentation.Elements)
+	result.OnActionResult = compareBasic(old.OnActionDocumentation.Elements, new.OnActionDocumentation.Elements)
 
 	return result
 }
 
-func compareEffects(old []*parser.Effect, new []*parser.Effect) *EffectResult {
-	result := &EffectResult{
+func compareEffects(old []*parser.Effect, new []*parser.Effect) *ElementResult[*parser.Effect] {
+	result := &ElementResult[*parser.Effect]{
 		Added:    make([]*parser.Effect, 0),
 		Changed:  make([]*parser.Effect, 0),
 		Removed:  make([]*parser.Effect, 0),
@@ -68,8 +44,8 @@ func compareEffects(old []*parser.Effect, new []*parser.Effect) *EffectResult {
 	}
 
 	for _, effect := range new {
-		compare := findEffect(effect.Name, old)
-		if compare == nil {
+		compare, found := findElement(effect, old)
+		if !found {
 			result.Added = append(result.Added, effect)
 			continue
 		}
@@ -89,8 +65,8 @@ func compareEffects(old []*parser.Effect, new []*parser.Effect) *EffectResult {
 	}
 
 	for _, effect := range old {
-		compare := findEffect(effect.Name, new)
-		if compare == nil {
+		_, found := findElement(effect, new)
+		if !found {
 			result.Removed = append(result.Removed, effect)
 			continue
 		}
@@ -99,8 +75,8 @@ func compareEffects(old []*parser.Effect, new []*parser.Effect) *EffectResult {
 	return result
 }
 
-func compareTriggers(old []*parser.Trigger, new []*parser.Trigger) *TriggerResult {
-	result := &TriggerResult{
+func compareTriggers(old []*parser.Trigger, new []*parser.Trigger) *ElementResult[*parser.Trigger] {
+	result := &ElementResult[*parser.Trigger]{
 		Added:    make([]*parser.Trigger, 0),
 		Changed:  make([]*parser.Trigger, 0),
 		Removed:  make([]*parser.Trigger, 0),
@@ -108,8 +84,8 @@ func compareTriggers(old []*parser.Trigger, new []*parser.Trigger) *TriggerResul
 	}
 
 	for _, trigger := range new {
-		compare := findTrigger(trigger.Name, old)
-		if compare == nil {
+		compare, found := findElement(trigger, old)
+		if !found {
 			result.Added = append(result.Added, trigger)
 			continue
 		}
@@ -137,8 +113,8 @@ func compareTriggers(old []*parser.Trigger, new []*parser.Trigger) *TriggerResul
 	}
 
 	for _, trigger := range old {
-		compare := findTrigger(trigger.Name, new)
-		if compare == nil {
+		_, found := findElement(trigger, new)
+		if !found {
 			result.Removed = append(result.Removed, trigger)
 			continue
 		}
@@ -147,43 +123,27 @@ func compareTriggers(old []*parser.Trigger, new []*parser.Trigger) *TriggerResul
 	return result
 }
 
-func compareEventTargets(old []*parser.EventTarget, new []*parser.EventTarget) *EventTargetResult {
-	result := &EventTargetResult{
-		Added:    make([]*parser.EventTarget, 0),
-		Changed:  make([]*parser.EventTarget, 0),
-		Removed:  make([]*parser.EventTarget, 0),
-		Existing: make([]*parser.EventTarget, 0),
+func compareBasic[T parser.ScriptElement](old []T, new []T) *ElementResult[T] {
+	result := &ElementResult[T]{
+		Added:    make([]T, 0),
+		Changed:  make([]T, 0),
+		Removed:  make([]T, 0),
+		Existing: make([]T, 0),
 	}
 
-	for _, eventTarget := range new {
-		compare := findEventTarget(eventTarget.Name, old)
-		if compare == nil {
-			result.Added = append(result.Added, eventTarget)
+	for _, element := range new {
+		_, found := findElement(element, old)
+		if !found {
+			result.Added = append(result.Added, element)
 			continue
 		}
-		if eventTarget.Description != compare.Description {
-			result.Changed = append(result.Changed, eventTarget)
-			continue
-		}
-		if eventTarget.Parameterized != compare.Parameterized {
-			result.Changed = append(result.Changed, eventTarget)
-			continue
-		}
-		if slices.Compare(eventTarget.SupportedScopes, compare.SupportedScopes) != 0 {
-			result.Changed = append(result.Changed, eventTarget)
-			continue
-		}
-		if eventTarget.OutputScope != compare.OutputScope {
-			result.Changed = append(result.Changed, eventTarget)
-			continue
-		}
-		result.Existing = append(result.Existing, eventTarget)
+		result.Existing = append(result.Existing, element)
 	}
 
-	for _, eventTarget := range old {
-		compare := findEventTarget(eventTarget.Name, new)
-		if compare == nil {
-			result.Removed = append(result.Removed, eventTarget)
+	for _, element := range old {
+		_, found := findElement(element, new)
+		if !found {
+			result.Removed = append(result.Removed, element)
 			continue
 		}
 	}
@@ -191,101 +151,11 @@ func compareEventTargets(old []*parser.EventTarget, new []*parser.EventTarget) *
 	return result
 }
 
-func compareIterators(old []*parser.Iterator, new []*parser.Iterator) *IteratorResult {
-	result := &IteratorResult{
-		Added:    make([]*parser.Iterator, 0),
-		Removed:  make([]*parser.Iterator, 0),
-		Existing: make([]*parser.Iterator, 0),
-	}
-
-	for _, iterator := range new {
-		compare := findIterator(iterator.Name, old)
-		if compare == nil {
-			result.Added = append(result.Added, iterator)
-			continue
-		}
-		result.Existing = append(result.Existing, iterator)
-	}
-
-	for _, iterator := range old {
-		compare := findIterator(iterator.Name, new)
-		if compare == nil {
-			result.Removed = append(result.Removed, iterator)
-			continue
-		}
-	}
-
-	return result
-}
-
-func compareScopes(old []*parser.Scope, new []*parser.Scope) *ScopeResult {
-	result := &ScopeResult{
-		Added:    make([]*parser.Scope, 0),
-		Removed:  make([]*parser.Scope, 0),
-		Existing: make([]*parser.Scope, 0),
-	}
-
-	for _, scope := range new {
-		compare := findScope(scope.Name, old)
-		if compare == nil {
-			result.Added = append(result.Added, scope)
-			continue
-		}
-		result.Existing = append(result.Existing, scope)
-	}
-
-	for _, scope := range old {
-		compare := findScope(scope.Name, new)
-		if compare == nil {
-			result.Removed = append(result.Removed, scope)
-			continue
-		}
-	}
-
-	return result
-}
-
-func findTrigger(name string, elements []*parser.Trigger) *parser.Trigger {
+func findElement[T parser.ScriptElement](base T, elements []T) (T, bool) {
 	for _, element := range elements {
-		if element.Name == name {
-			return element
+		if element.ElementName() == base.ElementName() {
+			return element, true
 		}
 	}
-	return nil
-}
-
-func findEffect(name string, elements []*parser.Effect) *parser.Effect {
-	for _, element := range elements {
-		if element.Name == name {
-			return element
-		}
-	}
-	return nil
-}
-
-func findEventTarget(name string, elements []*parser.EventTarget) *parser.EventTarget {
-	for _, element := range elements {
-		if element.Name == name {
-			return element
-		}
-	}
-	return nil
-}
-
-func findIterator(name string, elements []*parser.Iterator) *parser.Iterator {
-	for _, element := range elements {
-		if element.Name == name {
-			return element
-		}
-	}
-	return nil
-}
-
-func findScope(name string, elements []*parser.Scope) *parser.Scope {
-	for _, element := range elements {
-		if element.Name == name {
-			return element
-		}
-	}
-	return nil
+	return elements[0], false
 }

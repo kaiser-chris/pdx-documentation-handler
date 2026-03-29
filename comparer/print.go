@@ -16,29 +16,33 @@ func (compare *CompareResult) Print() string {
 	builder.WriteString(" * [Triggers](#triggers)\n")
 	builder.WriteString(" * [Event Targets](#event-targets)\n")
 	builder.WriteString(" * [Iterators](#iterators)\n")
+	builder.WriteString(" * [On Actions](#on-actions)\n")
 	builder.WriteString("## Notes\n")
 	builder.WriteString(" * **Changed** means the description, scopes or anything related to the documentation for this element has changed\n")
 	builder.WriteString(" * The list of iterators do **not** include generated geographic region based iterators\n")
+	builder.WriteString(" * The on action scope is based on the script documentation, for more information see the `common/on_actions` directory\n")
 	builder.WriteString("## Scopes\n")
-	builder.WriteString(compare.ScopeResult.Print())
+	builder.WriteString(printScopes(compare.ScopeResult))
 	builder.WriteString("\n")
 	builder.WriteString("## Effects\n")
-	builder.WriteString(compare.EffectResult.Print())
+	builder.WriteString(printEffects(compare.EffectResult))
 	builder.WriteString("\n")
 	builder.WriteString("## Triggers\n")
-	builder.WriteString(compare.TriggerResult.Print())
+	builder.WriteString(printTriggers(compare.TriggerResult))
 	builder.WriteString("\n")
 	builder.WriteString("## Event Targets\n")
-	builder.WriteString(compare.EventTargetResult.Print())
+	builder.WriteString(printEventTargets(compare.EventTargetResult))
 	builder.WriteString("\n")
 	builder.WriteString("## Iterators\n")
-	builder.WriteString(compare.IteratorResult.Print())
+	builder.WriteString(printIterators(compare.IteratorResult))
+	builder.WriteString("## On Actions\n")
+	builder.WriteString(printOnActions(compare.OnActionResult))
 	builder.WriteString("\n")
 
 	return builder.String()
 }
 
-func (compare *EffectResult) Print() string {
+func printEffects(compare *ElementResult[*parser.Effect]) string {
 	var builder = strings.Builder{}
 
 	builder.WriteString(printTableHeader("Type", "Effect", "Description"))
@@ -71,7 +75,7 @@ func (compare *EffectResult) Print() string {
 	return builder.String()
 }
 
-func (compare *TriggerResult) Print() string {
+func printTriggers(compare *ElementResult[*parser.Trigger]) string {
 	var builder = strings.Builder{}
 
 	builder.WriteString(printTableHeader("Type", "Trigger", "Trait", "Description"))
@@ -107,7 +111,7 @@ func (compare *TriggerResult) Print() string {
 	return builder.String()
 }
 
-func (compare *EventTargetResult) Print() string {
+func printEventTargets(compare *ElementResult[*parser.EventTarget]) string {
 	var builder = strings.Builder{}
 
 	builder.WriteString(printTableHeader("Type", "Event Target", "Description"))
@@ -140,7 +144,7 @@ func (compare *EventTargetResult) Print() string {
 	return builder.String()
 }
 
-func (compare *IteratorResult) Print() string {
+func printIterators(compare *ElementResult[*parser.Iterator]) string {
 	var builder = strings.Builder{}
 
 	builder.WriteString(printTableHeader("Type", "Iterator"))
@@ -151,7 +155,7 @@ func (compare *IteratorResult) Print() string {
 		}
 		builder.WriteString(printTableLine(
 			"Added",
-			printInlineCode("{any\\|every\\|ordered\\|random}_"+element.Name),
+			printInlineCode("{any|every|ordered|random}_"+element.Name),
 		))
 		builder.WriteString("\n")
 	}
@@ -161,7 +165,7 @@ func (compare *IteratorResult) Print() string {
 		}
 		builder.WriteString(printTableLine(
 			"Removed",
-			printInlineCode("{any\\|every\\|ordered\\|random}_"+element.Name),
+			printInlineCode("{any|every|ordered|random}_"+element.Name),
 		))
 		builder.WriteString("\n")
 	}
@@ -169,7 +173,7 @@ func (compare *IteratorResult) Print() string {
 	return builder.String()
 }
 
-func (compare *ScopeResult) Print() string {
+func printScopes(compare *ElementResult[*parser.Scope]) string {
 	var builder = strings.Builder{}
 
 	builder.WriteString(printTableHeader("Type", "Scope", "Supports Variables", "Supports Effects", "Supports Triggers", "Save Game Identifier"))
@@ -199,6 +203,37 @@ func (compare *ScopeResult) Print() string {
 			printBool(element.SupportsEffects),
 			printBool(element.SupportsTriggers),
 			printInlineCode(element.SaveIdentifier),
+		))
+		builder.WriteString("\n")
+	}
+
+	return builder.String()
+}
+
+func printOnActions(compare *ElementResult[*parser.OnAction]) string {
+	var builder = strings.Builder{}
+
+	builder.WriteString(printTableHeader("Type", "On Action", "Scope"))
+	builder.WriteString("\n")
+	for _, element := range compare.Added {
+		if !element.FromCode {
+			continue
+		}
+		builder.WriteString(printTableLine(
+			"Added",
+			printInlineCode(element.Name),
+			printInlineCode(element.Scope),
+		))
+		builder.WriteString("\n")
+	}
+	for _, element := range compare.Removed {
+		if isGeographicRegionIterator(element.Name) {
+			continue
+		}
+		builder.WriteString(printTableLine(
+			"Removed",
+			printInlineCode(element.Name),
+			printInlineCode(element.Scope),
 		))
 		builder.WriteString("\n")
 	}
