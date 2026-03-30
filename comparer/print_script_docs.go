@@ -6,10 +6,10 @@ import (
 	"bahmut.de/pdx-documentation-manager/parser"
 )
 
-func (compare *CompareResult) Print() string {
+func (compare *ScriptDocumentationCompareResult) Print(version string) string {
 	var builder = strings.Builder{}
 
-	builder.WriteString("# Script Documentation\n")
+	builder.WriteString("# Script Documentation " + version + "\n")
 	builder.WriteString("## Table of Contents\n")
 	builder.WriteString(" * [Scopes](#scopes)\n")
 	builder.WriteString(" * [Effects](#effects)\n")
@@ -155,7 +155,7 @@ func printIterators(compare *ElementResult[*parser.Iterator]) string {
 		}
 		builder.WriteString(printTableLine(
 			"Added",
-			printInlineCode("{any|every|ordered|random}_"+element.Name),
+			printInlineCode("{any\\|every\\|ordered\\|random}_"+element.Name),
 		))
 		builder.WriteString("\n")
 	}
@@ -165,7 +165,7 @@ func printIterators(compare *ElementResult[*parser.Iterator]) string {
 		}
 		builder.WriteString(printTableLine(
 			"Removed",
-			printInlineCode("{any|every|ordered|random}_"+element.Name),
+			printInlineCode("{any\\|every\\|ordered\\|random}_"+element.Name),
 		))
 		builder.WriteString("\n")
 	}
@@ -262,6 +262,9 @@ func printTableHeader(elements ...string) string {
 }
 
 func clean(text string) string {
+	if strings.HasPrefix(text, "`") && strings.HasSuffix(text, "`") {
+		return text
+	}
 	result := text
 	result = strings.ReplaceAll(result, "|", "\\|")
 	result = strings.ReplaceAll(result, "[", "\\[")

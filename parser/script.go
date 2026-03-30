@@ -56,10 +56,6 @@ type ScriptDocumentation struct {
 	OnActionDocumentation    *ElementDocumentation[OnAction]    `json:"on-action-documentation"`
 }
 
-type ScriptElement interface {
-	ElementName() string
-}
-
 type ScriptElements interface {
 	Effect | Trigger | EventTarget | Iterator | Scope | OnAction
 }

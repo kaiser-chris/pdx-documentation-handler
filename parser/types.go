@@ -37,10 +37,18 @@ type DataType struct {
 	Description string
 }
 
+func (d *DataType) ElementName() string {
+	return d.Name
+}
+
 type DataTypeFunction struct {
 	Name        string
 	Description string
 	ReturnType  string
+}
+
+func (d *DataTypeFunction) ElementName() string {
+	return d.Name
 }
 
 func ParseDataTypeDocumentation(folder string) (*DataTypeDocumentation, error) {

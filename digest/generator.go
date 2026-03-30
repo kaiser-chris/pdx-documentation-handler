@@ -18,21 +18,34 @@ const (
 	digestFolder        = "digest"
 )
 
-func Generate() error {
+const (
+	fileDiscord             = "discord.md"
+	fileScriptDocumentation = "changes_data_types.md"
+	fileDataTypes           = "changes_script_docs.md"
+)
+
+func Generate(version string) error {
 	err, digestPath := setupFolders()
 	if err != nil {
 		return err
 	}
 
-	err = generateScriptDocumentationChanges(digestPath)
+	err = generateScriptDocumentationChanges(digestPath, version)
 	if err != nil {
 		return err
 	}
 
-	documentation, err := parser.ParseDataTypeDocumentation(path.Join(documentationFolder, "old"))
-	print(documentation)
+	err = generateDataTypeChanges(digestPath, version)
+	if err != nil {
+		return err
+	}
 
 	err = generateDocumentationFolder(digestPath)
+	if err != nil {
+		return err
+	}
+
+	err = generateDiscordTableOfContents(digestPath, version)
 	if err != nil {
 		return err
 	}
@@ -40,7 +53,7 @@ func Generate() error {
 	return nil
 }
 
-func generateScriptDocumentationChanges(digestPath string) error {
+func generateScriptDocumentationChanges(digestPath, version string) error {
 	oldFolder := path.Join(documentationFolder, "old")
 	newFolder := path.Join(documentationFolder, "new")
 
@@ -53,9 +66,32 @@ func generateScriptDocumentationChanges(digestPath string) error {
 		return err
 	}
 
-	compare := comparer.Compare(documentationOld, documentationNew)
+	compare := comparer.CompareScriptDocumentation(documentationOld, documentationNew)
 
-	err = os.WriteFile(path.Join(digestPath, "changes_script_docs.md"), []byte(compare.Print()), 0644)
+	err = os.WriteFile(path.Join(digestPath, fileDataTypes), []byte(compare.Print(version)), 0644)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func generateDataTypeChanges(digestPath, version string) error {
+	oldFolder := path.Join(documentationFolder, "old")
+	newFolder := path.Join(documentationFolder, "new")
+
+	documentationOld, err := parser.ParseDataTypeDocumentation(oldFolder)
+	if err != nil {
+		return err
+	}
+	documentationNew, err := parser.ParseDataTypeDocumentation(newFolder)
+	if err != nil {
+		return err
+	}
+
+	compare := comparer.CompareDataTypes(documentationOld, documentationNew)
+
+	err = os.WriteFile(path.Join(digestPath, fileScriptDocumentation), []byte(compare.Print(version)), 0644)
 	if err != nil {
 		return err
 	}

@@ -6,7 +6,7 @@ import (
 	"bahmut.de/pdx-documentation-manager/parser"
 )
 
-type CompareResult struct {
+type ScriptDocumentationCompareResult struct {
 	EffectResult      *ElementResult[*parser.Effect]      `json:"effect-result"`
 	TriggerResult     *ElementResult[*parser.Trigger]     `json:"trigger-result"`
 	EventTargetResult *ElementResult[*parser.EventTarget] `json:"event-target-result"`
@@ -15,15 +15,20 @@ type CompareResult struct {
 	OnActionResult    *ElementResult[*parser.OnAction]    `json:"on-action-result"`
 }
 
-type ElementResult[T parser.ScriptElement] struct {
+type DataTypesCompareResult struct {
+	DataTypeResult      *ElementResult[*parser.DataType]         `json:"data-type-result"`
+	GlobalPromoteResult *ElementResult[*parser.DataTypeFunction] `json:"global-promote-result"`
+}
+
+type ElementResult[T parser.DocumentationElement] struct {
 	Added    []T `json:"added"`
 	Changed  []T `json:"changed"`
 	Removed  []T `json:"removed"`
 	Existing []T `json:"existing"`
 }
 
-func Compare(old *parser.ScriptDocumentation, new *parser.ScriptDocumentation) *CompareResult {
-	result := &CompareResult{}
+func CompareScriptDocumentation(old *parser.ScriptDocumentation, new *parser.ScriptDocumentation) *ScriptDocumentationCompareResult {
+	result := &ScriptDocumentationCompareResult{}
 
 	result.EffectResult = compareEffects(old.EffectDocumentation.Elements, new.EffectDocumentation.Elements)
 	result.TriggerResult = compareTriggers(old.TriggerDocumentation.Elements, new.TriggerDocumentation.Elements)
@@ -31,6 +36,15 @@ func Compare(old *parser.ScriptDocumentation, new *parser.ScriptDocumentation) *
 	result.IteratorResult = compareBasic(old.IteratorDocumentation.Elements, new.IteratorDocumentation.Elements)
 	result.ScopeResult = compareBasic(old.ScopeDocumentation.Elements, new.ScopeDocumentation.Elements)
 	result.OnActionResult = compareBasic(old.OnActionDocumentation.Elements, new.OnActionDocumentation.Elements)
+
+	return result
+}
+
+func CompareDataTypes(old *parser.DataTypeDocumentation, new *parser.DataTypeDocumentation) *DataTypesCompareResult {
+	result := &DataTypesCompareResult{}
+
+	result.DataTypeResult = compareBasic(old.DataTypes, new.DataTypes)
+	result.GlobalPromoteResult = compareBasic(old.GlobalPromotes, new.GlobalPromotes)
 
 	return result
 }
@@ -123,7 +137,7 @@ func compareTriggers(old []*parser.Trigger, new []*parser.Trigger) *ElementResul
 	return result
 }
 
-func compareBasic[T parser.ScriptElement](old []T, new []T) *ElementResult[T] {
+func compareBasic[T parser.DocumentationElement](old []T, new []T) *ElementResult[T] {
 	result := &ElementResult[T]{
 		Added:    make([]T, 0),
 		Changed:  make([]T, 0),
@@ -151,7 +165,7 @@ func compareBasic[T parser.ScriptElement](old []T, new []T) *ElementResult[T] {
 	return result
 }
 
-func findElement[T parser.ScriptElement](base T, elements []T) (T, bool) {
+func findElement[T parser.DocumentationElement](base T, elements []T) (T, bool) {
 	for _, element := range elements {
 		if element.ElementName() == base.ElementName() {
 			return element, true

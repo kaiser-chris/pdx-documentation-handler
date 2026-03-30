@@ -10,6 +10,10 @@ const (
 	terminator = ""
 )
 
+type DocumentationElement interface {
+	ElementName() string
+}
+
 func cleanLine(line string) string {
 	output := strings.TrimSpace(line)
 	output = strings.TrimPrefix(output, prefixSmall)
