@@ -32,6 +32,7 @@ const (
 	prefixMedium               = "## "
 	prefixSupportedScopes      = "**Supported Scopes**: "
 	prefixSupportedTargets     = "**Supported Targets**: "
+	prefixValueType            = "**Value Type**: "
 	triggerTraitValue          = "Traits: <, <=, =, !=, >, >="
 	triggerTraitBoolean        = "Traits: yes/no"
 	eventTargetInput           = "Input Scopes: "
@@ -91,6 +92,7 @@ type Effect struct {
 	Description      string   `json:"description"`
 	SupportedScopes  []string `json:"supported-scopes"`
 	SupportedTargets []string `json:"supported-targets"`
+	ValueType        string   `json:"value-type"`
 }
 
 func (e Effect) ElementName() string {
@@ -102,6 +104,7 @@ type Trigger struct {
 	Description      string   `json:"description"`
 	SupportedScopes  []string `json:"supported-scopes"`
 	SupportedTargets []string `json:"supported-targets"`
+	ValueType        string   `json:"value-type"`
 	Value            bool     `json:"is-value"`
 	Boolean          bool     `json:"is-bool"`
 }
@@ -301,6 +304,11 @@ func ParseEffectDocumentation(file string) (*ElementDocumentation[Effect], error
 			slices.Sort(effect.SupportedTargets)
 			continue
 		}
+		if strings.HasPrefix(line, prefixValueType) {
+			// Value Type
+			effect.ValueType = cleanLine(line)
+			continue
+		}
 		// Description
 		effect.Description += "\n" + line
 		effect.Description = strings.TrimPrefix(effect.Description, "\n")
@@ -370,6 +378,11 @@ func ParseTriggerDocumentation(file string) (*ElementDocumentation[Trigger], err
 			// Supported Targets
 			trigger.SupportedTargets = strings.Split(cleanLine(line), listSeparator)
 			slices.Sort(trigger.SupportedTargets)
+			continue
+		}
+		if strings.HasPrefix(line, prefixValueType) {
+			// Value Type
+			trigger.ValueType = cleanLine(line)
 			continue
 		}
 		// Description

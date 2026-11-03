@@ -71,6 +71,10 @@ func compareEffects(old []*parser.Effect, new []*parser.Effect) *ElementResult[*
 			result.Changed = append(result.Changed, effect)
 			continue
 		}
+		if effect.ValueType != compare.ValueType {
+			result.Changed = append(result.Changed, effect)
+			continue
+		}
 		if slices.Compare(effect.SupportedScopes, compare.SupportedScopes) != 0 {
 			result.Changed = append(result.Changed, effect)
 			continue
@@ -116,6 +120,10 @@ func compareTriggers(old []*parser.Trigger, new []*parser.Trigger) *ElementResul
 			continue
 		}
 		if trigger.Value != compare.Value {
+			result.Changed = append(result.Changed, trigger)
+			continue
+		}
+		if trigger.ValueType != compare.ValueType {
 			result.Changed = append(result.Changed, trigger)
 			continue
 		}

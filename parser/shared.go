@@ -19,6 +19,7 @@ func cleanLine(line string) string {
 	output = strings.TrimPrefix(output, prefixMedium)
 	output = strings.TrimPrefix(output, prefixSupportedScopes)
 	output = strings.TrimPrefix(output, prefixSupportedTargets)
+	output = strings.TrimPrefix(output, prefixValueType)
 	output = strings.TrimPrefix(output, eventTargetInput)
 	output = strings.TrimPrefix(output, eventTargetOutput)
 	output = strings.TrimPrefix(output, scopeSupportTriggers)

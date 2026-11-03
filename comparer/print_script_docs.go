@@ -52,12 +52,13 @@ func (compare *ScriptDocumentationCompareResult) Print(version string) string {
 func printEffects(compare *ElementResult[*parser.Effect]) string {
 	var builder = strings.Builder{}
 
-	builder.WriteString(printTableHeader("Type", "Effect", "Description"))
+	builder.WriteString(printTableHeader("Type", "Effect", "Value Type", "Description"))
 	builder.WriteString("\n")
 	for _, element := range compare.Added {
 		builder.WriteString(printTableLine(
 			"Added",
 			printInlineCode(element.Name),
+			printEffectValueType(element),
 			printFirstLine(element.Description),
 		))
 		builder.WriteString("\n")
@@ -66,6 +67,7 @@ func printEffects(compare *ElementResult[*parser.Effect]) string {
 		builder.WriteString(printTableLine(
 			"Changed",
 			printInlineCode(element.Name),
+			printEffectValueType(element),
 			printFirstLine(element.Description),
 		))
 		builder.WriteString("\n")
@@ -74,6 +76,7 @@ func printEffects(compare *ElementResult[*parser.Effect]) string {
 		builder.WriteString(printTableLine(
 			"Removed",
 			printInlineCode(element.Name),
+			printEffectValueType(element),
 			printFirstLine(element.Description),
 		))
 		builder.WriteString("\n")
@@ -85,13 +88,14 @@ func printEffects(compare *ElementResult[*parser.Effect]) string {
 func printTriggers(compare *ElementResult[*parser.Trigger]) string {
 	var builder = strings.Builder{}
 
-	builder.WriteString(printTableHeader("Type", "Trigger", "Trait", "Description"))
+	builder.WriteString(printTableHeader("Type", "Trigger", "Trait", "Value Type", "Description"))
 	builder.WriteString("\n")
 	for _, element := range compare.Added {
 		builder.WriteString(printTableLine(
 			"Added",
 			printInlineCode(element.Name),
 			printTriggerTraits(element),
+			printTriggerValueType(element),
 			printFirstLine(element.Description),
 		))
 		builder.WriteString("\n")
@@ -101,6 +105,7 @@ func printTriggers(compare *ElementResult[*parser.Trigger]) string {
 			"Changed",
 			printInlineCode(element.Name),
 			printTriggerTraits(element),
+			printTriggerValueType(element),
 			printFirstLine(element.Description),
 		))
 		builder.WriteString("\n")
@@ -110,6 +115,7 @@ func printTriggers(compare *ElementResult[*parser.Trigger]) string {
 			"Removed",
 			printInlineCode(element.Name),
 			printTriggerTraits(element),
+			printTriggerValueType(element),
 			printFirstLine(element.Description),
 		))
 		builder.WriteString("\n")
@@ -329,6 +335,23 @@ func printTriggerTraits(element *parser.Trigger) string {
 	}
 	if element.Boolean {
 		return "Boolean"
+	}
+	if element.ValueType != "" {
+		return "Type Key"
+	}
+	return " - "
+}
+
+func printTriggerValueType(element *parser.Trigger) string {
+	if element.ValueType != "" {
+		return element.ValueType
+	}
+	return " - "
+}
+
+func printEffectValueType(element *parser.Effect) string {
+	if element.ValueType != "" {
+		return element.ValueType
 	}
 	return " - "
 }
