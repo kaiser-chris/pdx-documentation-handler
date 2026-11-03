@@ -9,7 +9,9 @@ import (
 func (compare *DataTypesCompareResult) Print(version string) string {
 	var builder = strings.Builder{}
 
-	builder.WriteString("# Data Type Documentation " + version + "\n")
+	builder.WriteString("# Data Type Documentation ")
+	builder.WriteString(version)
+	builder.WriteString("\n")
 	builder.WriteString("## Table of Contents\n")
 	builder.WriteString(" * [Types](#types)\n")
 	builder.WriteString(" * [Global Functions](#global-functions)\n")
@@ -21,7 +23,6 @@ func (compare *DataTypesCompareResult) Print(version string) string {
 	builder.WriteString("\n")
 	builder.WriteString("## Global Functions\n")
 	builder.WriteString(printFunctions(compare.GlobalFunctionResult))
-	builder.WriteString("\n")
 	builder.WriteString("\n")
 	builder.WriteString("## Global Promotes\n")
 	builder.WriteString(printPromotes(compare.GlobalPromoteResult))

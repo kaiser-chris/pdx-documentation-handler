@@ -13,6 +13,7 @@ type ScriptDocumentationCompareResult struct {
 	IteratorResult    *ElementResult[*parser.Iterator]    `json:"iterator-result"`
 	ScopeResult       *ElementResult[*parser.Scope]       `json:"scope-result"`
 	OnActionResult    *ElementResult[*parser.OnAction]    `json:"on-action-result"`
+	ModifierResult    *ElementResult[*parser.Modifier]    `json:"modifier-result"`
 }
 
 type DataTypesCompareResult struct {
@@ -37,6 +38,7 @@ func CompareScriptDocumentation(old *parser.ScriptDocumentation, new *parser.Scr
 	result.IteratorResult = compareBasic(old.IteratorDocumentation.Elements, new.IteratorDocumentation.Elements)
 	result.ScopeResult = compareBasic(old.ScopeDocumentation.Elements, new.ScopeDocumentation.Elements)
 	result.OnActionResult = compareBasic(old.OnActionDocumentation.Elements, new.OnActionDocumentation.Elements)
+	result.ModifierResult = compareBasic(old.ModifierDocumentation.Elements, new.ModifierDocumentation.Elements)
 
 	return result
 }

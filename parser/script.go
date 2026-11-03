@@ -10,10 +10,12 @@ import (
 	"slices"
 	"strings"
 
+	//"bahmut.de/pdx-documentation-manager/logging"
 	"bahmut.de/pdx-documentation-manager/util"
 )
 
 var regexModifierIdentifier = regexp.MustCompile(`^[a-zA-Z0-9_-]+:$`)
+var regexEu5ModifierIdentifier = regexp.MustCompile(`^Tag: ([a-zA-Z0-9_-]+), Categories: ([a-zA-Z0-9_-]+), , All,`)
 
 const (
 	scriptEffects      = "effects.log"
@@ -59,6 +61,10 @@ const (
 	modifierTypeStatic         = "static"
 	modifierTypeDynamic        = "dynamic"
 	modifierTypePotential      = "potential"
+	modifierEu5Definitions     = "Printing Modifier Definitions:"
+	modifierEu5Tag             = "Tag: "
+	modifierEu5Categories      = ", Categories: "
+	modifierEu5End             = ", , All, "
 )
 
 type ScriptDocumentation struct {
@@ -449,17 +455,29 @@ func ParseEventTargetDocumentation(file string) (*ElementDocumentation[EventTarg
 	scanner := bufio.NewScanner(bytes.NewReader(content))
 
 	var eventTarget *EventTarget = nil
+	//var eventTargetExists bool
 	for scanner.Scan() {
 		line := scanner.Text()
 		if strings.HasPrefix(line, prefixSmall) && eventTarget != nil {
 			return nil, fmt.Errorf("unterminated effect: %s, %s", eventTarget.Name, line)
 		}
-		if strings.HasPrefix(line, prefixSmall) {
+
+		eventTargetIndex := slices.IndexFunc(documentation.Elements, func(Target *EventTarget) bool {
+			return Target.ElementName() == cleanLine(line)
+		})
+		if eventTargetIndex > -1 && strings.HasPrefix(line, prefixSmall) {
+			eventTarget = documentation.Elements[eventTargetIndex]
+			//logging.Info(eventTargetIndex, cleanLine(line), eventTarget.Description, eventTarget.SupportedScopes)
+			continue
+		}
+
+		if eventTargetIndex == -1 && strings.HasPrefix(line, prefixSmall) {
 			eventTarget = &EventTarget{
 				Name:            cleanLine(line),
 				SupportedScopes: make([]string, 0),
 				Parameterized:   false,
 			}
+			//logging.Info(eventTargetIndex)
 			continue
 		}
 		if eventTarget == nil {
@@ -472,13 +490,22 @@ func ParseEventTargetDocumentation(file string) (*ElementDocumentation[EventTarg
 		}
 		if strings.TrimSpace(line) == terminator {
 			// Finished Event Target
-			documentation.Elements = append(documentation.Elements, eventTarget)
+			if eventTargetIndex == -1 {
+				documentation.Elements = append(documentation.Elements, eventTarget)
+			}
+			eventTargetIndex = -1
 			eventTarget = nil
 			continue
 		}
 		if strings.HasPrefix(line, eventTargetInput) {
 			// Supported Scopes
-			eventTarget.SupportedScopes = strings.Split(cleanLine(line), listSeparator)
+			eventTarget.SupportedScopes = append(eventTarget.SupportedScopes, strings.Split(cleanLine(line), listSeparator)...)
+			slices.Sort(eventTarget.SupportedScopes)
+			continue
+		}
+		if strings.HasPrefix(line, "Global Link: ") {
+			// Supported Scopes
+			eventTarget.SupportedScopes = append(eventTarget.SupportedScopes, "global")
 			slices.Sort(eventTarget.SupportedScopes)
 			continue
 		}
@@ -487,9 +514,11 @@ func ParseEventTargetDocumentation(file string) (*ElementDocumentation[EventTarg
 			eventTarget.OutputScope = cleanLine(line)
 			continue
 		}
-		// Description
-		eventTarget.Description += "\n" + line
-		eventTarget.Description = strings.TrimPrefix(eventTarget.Description, "\n")
+		if eventTarget.Description != line {
+			// Description
+			eventTarget.Description += "\n" + line
+			eventTarget.Description = strings.TrimPrefix(eventTarget.Description, "\n")
+		}
 	}
 
 	return documentation, nil
@@ -647,6 +676,15 @@ func ParseModifierDocumentation(file string) (*ElementDocumentation[Modifier], e
 			documentation.Elements = append(documentation.Elements, element)
 			continue
 		}
+		if regexEu5ModifierIdentifier.MatchString(line) {
+			element = &Modifier{
+				Name: regexEu5ModifierIdentifier.FindStringSubmatch(line)[1],
+				Type: modifierTypeStatic,
+				Mask: regexEu5ModifierIdentifier.FindStringSubmatch(line)[2],
+			}
+			documentation.Elements = append(documentation.Elements, element)
+			continue
+		}
 		if cleanLine == terminator {
 			continue
 		}
@@ -662,7 +700,7 @@ func ParseModifierDocumentation(file string) (*ElementDocumentation[Modifier], e
 			continue
 		}
 		if strings.HasPrefix(line, modifierDescription) {
-			element.FullName = cleanLine
+			element.Description = cleanLine
 			continue
 		}
 	}
