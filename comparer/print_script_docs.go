@@ -9,13 +9,16 @@ import (
 func (compare *ScriptDocumentationCompareResult) Print(version string) string {
 	var builder = strings.Builder{}
 
-	builder.WriteString("# Script Documentation " + version + "\n")
+	builder.WriteString("# Script Documentation ")
+	builder.WriteString(version)
+	builder.WriteString("\n")
 	builder.WriteString("## Table of Contents\n")
 	builder.WriteString(" * [Scopes](#scopes)\n")
 	builder.WriteString(" * [Effects](#effects)\n")
 	builder.WriteString(" * [Triggers](#triggers)\n")
 	builder.WriteString(" * [Event Targets](#event-targets)\n")
 	builder.WriteString(" * [Iterators](#iterators)\n")
+	builder.WriteString(" * [Modifiers](#modifiers)\n")
 	builder.WriteString(" * [On Actions](#on-actions)\n")
 	builder.WriteString("## Notes\n")
 	builder.WriteString(" * **Changed** means the description, scopes or anything related to the documentation for this element has changed\n")
@@ -35,6 +38,10 @@ func (compare *ScriptDocumentationCompareResult) Print(version string) string {
 	builder.WriteString("\n")
 	builder.WriteString("## Iterators\n")
 	builder.WriteString(printIterators(compare.IteratorResult))
+	builder.WriteString("\n")
+	builder.WriteString("## Modifiers\n")
+	builder.WriteString(printModifiers(compare.ModifierResult))
+	builder.WriteString("\n")
 	builder.WriteString("## On Actions\n")
 	builder.WriteString(printOnActions(compare.OnActionResult))
 	builder.WriteString("\n")
@@ -247,11 +254,45 @@ func printOnActions(compare *ElementResult[*parser.OnAction]) string {
 	return builder.String()
 }
 
+func printModifiers(compare *ElementResult[*parser.Modifier]) string {
+	var builder = strings.Builder{}
+
+	builder.WriteString(printTableHeader("Type", "Modifier", "Scope"))
+	builder.WriteString("\n")
+	for _, element := range compare.Added {
+		builder.WriteString(printTableLine(
+			"Added",
+			printInlineCode(element.Name),
+			printFirstLine(element.Mask),
+		))
+		builder.WriteString("\n")
+	}
+	for _, element := range compare.Changed {
+		builder.WriteString(printTableLine(
+			"Changed",
+			printInlineCode(element.Name),
+			printFirstLine(element.Mask),
+		))
+		builder.WriteString("\n")
+	}
+	for _, element := range compare.Removed {
+		builder.WriteString(printTableLine(
+			"Removed",
+			printInlineCode(element.Name),
+			printFirstLine(element.Mask),
+		))
+		builder.WriteString("\n")
+	}
+
+	return builder.String()
+}
+
 func printTableLine(elements ...string) string {
 	var builder = strings.Builder{}
 	builder.WriteString("| ")
 	for _, element := range elements {
-		builder.WriteString(clean(element) + " | ")
+		builder.WriteString(clean(element))
+		builder.WriteString(" | ")
 	}
 	return strings.TrimSpace(builder.String())
 }

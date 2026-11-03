@@ -33,6 +33,8 @@ func cleanLine(line string) string {
 	output = strings.TrimPrefix(output, modifierMask)
 	output = strings.TrimPrefix(output, modifierName)
 	output = strings.TrimPrefix(output, modifierDescription)
+	output = strings.TrimPrefix(output, modifierEu5Tag)
+	output = strings.TrimSuffix(output, modifierEu5End)
 	output = strings.TrimSpace(output)
 	return output
 }
